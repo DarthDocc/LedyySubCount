@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BotRix Widget Builder</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;background:#111;color:#fff;font:16px Arial,sans-serif}
+    .wrap{max-width:980px;margin:32px auto;padding:20px}
+    h1{margin:0 0 8px}.sub{color:#bbb;margin-bottom:24px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    label{display:flex;flex-direction:column;gap:7px;font-weight:700}
+    input,select,button,textarea{font:inherit;border-radius:8px;border:1px solid #444;background:#1c1c1c;color:#fff;padding:11px}
+    input[type=color]{height:44px;padding:4px}
+    .full{grid-column:1/-1}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    button{cursor:pointer;background:#6f3d9f;border:0;font-weight:700}
+    iframe{width:100%;height:220px;border:1px solid #333;background:transparent;margin-top:18px}
+    textarea{width:100%;height:95px;resize:vertical}
+    .note{color:#c9c9c9;font-size:14px;line-height:1.45}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BotRix Total Subs Widget Builder</h1>
+  <div class="sub">Enter your own BotRix label URL or bid, customize the design, and copy the OBS Browser Source URL.</div>
+
+  <div class="grid">
+    <label class="full">BotRix subscriber label URL
+      <input id="botrixUrl" placeholder="https://botrix.live/widgets/labels?bid=...&type=cantidadSubs&platform=kick">
+    </label>
+
+    <label>BotRix bid
+      <input id="bid" placeholder="Your bid">
+    </label>
+
+    <label>Label
+      <input id="label" value="TOTAL SUBS">
+    </label>
+
+    <label>Font
+      <select id="font">
+        <option>Pixelify Sans</option><option>Orbitron</option><option>Roboto</option><option>Arial</option>
+      </select>
+    </label>
+
+    <label>Alignment
+      <select id="align"><option>center</option><option>left</option><option>right</option></select>
+    </label>
+
+    <label>Label size
+      <input id="labelSize" type="number" value="30">
+    </label>
+
+    <label>Count size
+      <input id="countSize" type="number" value="58">
+    </label>
+
+    <label>Label color
+      <input id="labelColor" type="color" value="#ffffff">
+    </label>
+
+    <label>Count color
+      <input id="countColor" type="color" value="#ffffff">
+    </label>
+
+    <label>Glow color
+      <input id="glowColor" type="color" value="#b56cff">
+    </label>
+
+    <label>Glow strength
+      <input id="glow" type="number" min="0" max="3" step=".1" value="1">
+    </label>
+
+    <label>Animation
+      <select id="animation"><option value="none">None</option><option value="pulse">Pulse</option><option value="float">Float</option><option value="flicker">Flicker</option></select>
+    </label>
+
+    <label>Fallback number
+      <input id="fallback" type="number" value="8869">
+    </label>
+
+    <label>Polling interval (ms)
+      <input id="poll" type="number" value="10000">
+    </label>
+
+    <label>Proxy URL (optional)
+      <input id="proxy" placeholder="https://your-worker.workers.dev/">
+    </label>
+
+    <label>Debug status
+      <select id="debug"><option value="0">Hidden</option><option value="1">Visible</option></select>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button id="generate">Generate URL</button>
+    <button id="copy">Copy URL</button>
+    <button id="open">Open Widget</button>
+  </div>
+
+  <label class="full" style="margin-top:18px">OBS Browser Source URL
+    <textarea id="output" readonly></textarea>
+  </label>
+
+  <iframe id="preview" title="Widget preview"></iframe>
+
+  <p class="note">This builder does not store passwords. The BotRix bid will be visible in the generated URL. Direct browser access may be blocked by BotRix CORS rules; the optional proxy field is included for that case.</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ids = ["bid","label","font","align","labelSize","countSize","labelColor","countColor","glowColor","glow","animation","fallback","poll","proxy","debug"];
+
+function importBotrixUrl(){
+  const raw = $("botrixUrl").value.trim();
+  if(!raw) return;
+  try{
+    const u = new URL(raw);
+    if(u.searchParams.get("bid")) $("bid").value = u.searchParams.get("bid");
+  }catch{}
+}
+
+function generate(){
+  importBotrixUrl();
+  const u = new URL("index.html", location.href);
+  for(const id of ids){
+    const value = $(id).value.trim();
+    if(value !== "") u.searchParams.set(id, value);
+  }
+  u.searchParams.set("platform","kick");
+  u.searchParams.set("type","cantidadSubs");
+  $("output").value = u.href;
+  $("preview").src = u.href;
+  return u.href;
+}
+
+$("generate").onclick = generate;
+$("copy").onclick = async () => { const url=generate(); await navigator.clipboard.writeText(url); $("copy").textContent="Copied"; setTimeout(()=>$("copy").textContent="Copy URL",1200); };
+$("open").onclick = () => window.open(generate(), "_blank");
+$("botrixUrl").addEventListener("change", generate);
+for(const id of ids) $(id).addEventListener("input", generate);
+generate();
+</script>
+</body>
+</html>
